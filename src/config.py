@@ -1,0 +1,12 @@
+api_key = '' # api key example given
+secret_key = '' # secret key for binance api 
+symbol = "BTCUSDT_UMCBL" # symbol to trade on 
+interval = "5m" #time interval to trade in ex; 5m , 15m , 1h ,1d , 1w 
+granularity = "1H"  #"6H" # granularity of candles 
+quantity = 30 # amount of usd ( base coin) to trade with 
+short_ema = 9 # short EMA
+long_ema = 21  # Long EMA
+startDate = "05.08.2022 08:33:41,76"   # candle data start date (DD.MM.YYYY hh:mm:ms,76)
+endDate = "29.11.2022 11:14:48,76"      # candle data end date (DD.MM.YYYY hh:mm:ms,76)
+leverage = 10 # Leverage 
+market_api_url = "https://api.bitget.com/api/mix/v1/market"
