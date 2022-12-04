@@ -2,9 +2,12 @@ import time
 from datetime import datetime
 import sys
 import math
-from config import symbol, granularity, short_ema, long_ema, startDate, strategy, strategy_map, interval
+from config import symbol, granularity, short_ema, long_ema, startDate, strategy, strategy_map, interval, rsi_overbought, rsi_oversold \
+    ,rsi_tolerance
 from utils import convertDateToTimestamp, makeApiCall
 from ichimoku import calculate_metrics, extractPriceListWithMetrics, getLatestPrice
+from rsi import calculate_rsi
+from ema import calculate_ema
 
 def getCandleData():
     response = []
@@ -33,37 +36,8 @@ def extractPriceListOtherApi(data):
         priceList.append(float(d["close"]))   # extract closing price from candles api response 
     return priceList
 
-def ema(s, n):
-    """
-    returns an n period exponential moving average for
-    the time series s
-    s is a list ordered from oldest (index 0) to most
-    recent (index -1)
-    n is an integer
-    returns a numeric array of the exponential
-    moving average
-    """
-    #s = array(s)
-    ema = []
-    j = 1
+## Strategies ##
 
-    #get n sma first and calculate the next n period ema
-    sma = sum(s[:n]) / n
-    multiplier = 2 / float(1 + n)
-    ema.append(sma)
-
-    #EMA(current) = ( (Price(current) - EMA(prev) ) x Multiplier) + EMA(prev)
-    ema.append(( (s[n] - sma) * multiplier) + sma)
-
-    #now calculate the rest of the values
-    for i in s[n+1:]:
-        tmp = ( (i - ema[j]) * multiplier) + ema[j]
-        j = j + 1
-        ema.append(tmp)
-
-    return ema
-
-# main function #
 def main_ema():
    print("Using EMA to look for new trades at an interval of {} seconds".format(interval))
    print("Watching: ",symbol)
@@ -76,8 +50,8 @@ def main_ema():
         candleData = getCandleData()
         priceList = extractPriceList(candleData)
         #print(price)
-        emaShort = ema(priceList, short_ema)[-1]
-        emaLong = ema(priceList, long_ema)[-1]
+        emaShort = calculate_ema(priceList, short_ema)[-1]
+        emaLong = calculate_ema(priceList, long_ema)[-1]
         print("ema1: {}, ema2: {}".format(emaShort, emaLong))
         print("lastema1: {}, lastema2: {}".format(last_emaShort, last_emaLong))
 
@@ -149,6 +123,34 @@ def main_ichimoku():
         print("-----------------------------------")
         time.sleep(interval)
 
+def main_rsi_and_ema():
+    print("Using RSI with EMA to look for new trades at an interval of {} seconds".format(interval))
+    print("Watching: ",symbol)
+    last_rsi = None
+    buy = False
+    sell = False
+    while True:
+        candleData = getCandleData()
+        priceList = extractPriceList(candleData)
+        rsi_line = calculate_rsi(priceList)
+        current_rsi = rsi_line[-1] + rsi_tolerance
+        print("current RSI: {}, last RSI: {}".format(current_rsi, last_rsi))
+        if current_rsi > rsi_oversold and last_rsi and not buy:
+            if last_rsi < rsi_oversold:   # detecting crossover of rsi above oversold threshold
+                print("Buy It!")
+                buy = True
+                sell = False
+                break
+        if current_rsi < rsi_overbought and last_rsi and not sell:
+            if last_rsi > rsi_overbought:   # detecting crossover of rsi below overbought threshold
+                print("Sell It!")
+                buy = False
+                sell = True
+                break
+        last_rsi = current_rsi
+        print("-----------------------")
+        time.sleep(interval)
+
 ## MAIN ##    
 if __name__ == "__main__":
     if(short_ema > 100 or long_ema > 100):
@@ -159,5 +161,8 @@ if __name__ == "__main__":
         main_ema()
     elif strategy_id == 2:
         main_ichimoku()
+    elif strategy_id == 3:
+        main_rsi_and_ema()
     else:
         print("Please enter a valid strategy. Check config file")
+        exit()
