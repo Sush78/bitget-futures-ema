@@ -1,13 +1,15 @@
 import time 
 from datetime import datetime
-import sys
-import math
 from config import symbol, granularity, short_ema, long_ema, startDate, strategy, strategy_map, interval, rsi_overbought, rsi_oversold \
     ,rsi_tolerance
 from utils import convertDateToTimestamp, makeApiCall
 from ichimoku import calculate_metrics, extractPriceListWithMetrics, getLatestPrice
 from rsi import calculate_rsi
 from ema import calculate_ema
+import websocket
+from websocket_utils import on_message, on_error, on_close
+import json
+import ssl
 
 def getCandleData():
     response = []
@@ -16,9 +18,6 @@ def getCandleData():
     params["granularity"] = granularity
     params["startTime"] = convertDateToTimestamp(startDate)    # 1659688421000
     params["endTime"] = convertDateToTimestamp(datetime.now()) # 1669763688000
-    ## following two lines are for spot API: comment above 3 to uncomment below 2
-    #params["period"] = granularity
-    #params["limit"] = 100
     response = makeApiCall("/candles", params=params)
     return response
 
@@ -154,16 +153,28 @@ def main_rsi_and_ema():
 
 ## MAIN ##    
 if __name__ == "__main__":
-    if(short_ema > 100 or long_ema > 100):
-        print("Only 100 recrods are returned by the API, please use short and long ema values below that")
-        exit() 
-    strategy_id = strategy_map[strategy]
-    if(not strategy_id or strategy_id == 1):
-        main_ema()
-    elif strategy_id == 2:
-        main_ichimoku()
-    elif strategy_id == 3:
-        main_rsi_and_ema()
+    # if(short_ema > 100 or long_ema > 100):
+    #     print("Only 100 recrods are returned by the API, please use short and long ema values below that")
+    #     exit() 
+    # strategy_id = strategy_map[strategy]
+    # if(not strategy_id or strategy_id == 1):
+    #     main_ema()
+    # elif strategy_id == 2:
+    #     main_ichimoku()
+    # elif strategy_id == 3:
+    #     main_rsi_and_ema()
+    # else:
+    #     print("Please enter a valid strategy. Check config file")
+    #     exit()
+    try:
+        _create_unverified_https_context = ssl._create_unverified_context
+    except AttributeError:
+        pass
     else:
-        print("Please enter a valid strategy. Check config file")
-        exit()
+        ssl._create_default_https_context = _create_unverified_https_context
+        
+    wsapp = websocket.WebSocketApp("wss://ws.bitget.com/mix/v1/stream", on_message=on_message, on_error = on_error, on_close = on_close)
+    wsapp.run_forever() 
+    with open('subscription.json', 'r') as f:
+        data = json.load(f)
+    wsapp.send(data)

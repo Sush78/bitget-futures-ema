@@ -1,0 +1,10 @@
+{
+    "op":"subscribe",
+    "args":[
+        {
+            "instType":"mc",
+            "channel":"candle5m",
+            "instId":"BTCUSDT"
+        }
+    ]
+}
