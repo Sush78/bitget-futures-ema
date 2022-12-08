@@ -1,19 +1,19 @@
-api_key = '' # api key example given
-secret_key = '' # secret key for binance api 
+api_key = '' # api key for api
+secret_key = '' # secret key for  api 
 
-symbol =  "BTCUSDT_UMCBL" # "BTCUSDT_UMCBL" # symbol to trade on 
+symbol = "BTCUSDT_UMCBL" # symbol to trade on || examples: BTCUSDT_UMCBL, ETHUSDT_UMCBL, XRPUSDT_UMCBL, LTCUSDT_UMCBL
 
-interval = 5 #time interval to trade (in seconds): Hits API for new process in intervals
+interval = 5 # time interval to trade (in seconds): Hits API for new process in intervals
 
-granularity = "1m"  #"6H" # granularity of candles 
+granularity = "1m" # granularity of candles , link: https://bitgetlimited.github.io/apidoc/en/mix/#producttype
 
 quantity = 30 # amount of usd ( base coin) to trade with 
 
 short_ema = 9 # short EMA
-long_ema = 21  # Long EMA
+long_ema = 21 # Long EMA || API is returning only 100 records so long_ema is constrained to 100
 
 rsi_period = 14  # period used for Relative Strength Index calculation
-rsi_overbought = 70 # overbought threshold for RSI (in percentage | RSI value)
+rsi_overbought = 49 # overbought threshold for RSI (in percentage | RSI value)
 rsi_oversold = 30 # oversold threshold for RSI (in percentage | RSI value)
 rsi_tolerance = 0 # RSI calculatins result in floating errors, this value is added to the result to match it with exchange value
 

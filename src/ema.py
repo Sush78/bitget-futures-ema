@@ -1,6 +1,7 @@
 '''
 This file is used to calculate EMA
 '''
+import pandas as pd
 
 def calculate_ema(s, n):
     """
@@ -31,3 +32,8 @@ def calculate_ema(s, n):
         ema.append(tmp)
 
     return ema
+
+def pandas_ema(priceList, n):
+    df = pd.DataFrame(priceList, columns=['price'])
+    ema_ = df['price'].ewm(com=n-1, adjust=False).mean()
+    return list(ema_)

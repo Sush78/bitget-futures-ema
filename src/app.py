@@ -1,13 +1,11 @@
 import time 
 from datetime import datetime
-import sys
-import math
 from config import symbol, granularity, short_ema, long_ema, startDate, strategy, strategy_map, interval, rsi_overbought, rsi_oversold \
     ,rsi_tolerance
 from utils import convertDateToTimestamp, makeApiCall
 from ichimoku import calculate_metrics, extractPriceListWithMetrics, getLatestPrice
 from rsi import calculate_rsi
-from ema import calculate_ema
+from ema import calculate_ema, pandas_ema
 
 def getCandleData():
     response = []
@@ -50,11 +48,11 @@ def main_ema():
    while True:
         candleData = getCandleData()
         priceList = extractPriceList(candleData)
-        #print(price)
-        emaShort = calculate_ema(priceList, short_ema)[-1]
-        emaLong = calculate_ema(priceList, long_ema)[-1]
+        emaShort = calculate_ema(priceList, short_ema)[-1] # pandas_ema(priceList, short_ema)[-1]
+        emaLong = calculate_ema(priceList, long_ema)[-1] # pandas_ema(priceList, long_ema)[-1]
         print("ema1: {}, ema2: {}".format(emaShort, emaLong))
         print("lastema1: {}, lastema2: {}".format(last_emaShort, last_emaLong))
+        print("current prices: ", priceList[-1])
 
         if(emaShort > emaLong and last_emaShort and not buy):  # looking for crossOver (short crosses long)
             print("trying up cross")
@@ -154,7 +152,7 @@ def main_rsi_and_ema():
 
 ## MAIN ##    
 if __name__ == "__main__":
-    if(short_ema > 100 or long_ema > 100):
+    if(short_ema >= 100 or long_ema >= 100):
         print("Only 100 recrods are returned by the API, please use short and long ema values below that")
         exit() 
     strategy_id = strategy_map[strategy]
