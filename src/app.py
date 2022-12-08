@@ -40,10 +40,11 @@ def extractPriceListOtherApi(data):
 
 def main_ema():
    print("Using EMA to look for new trades at an interval of {} seconds".format(interval))
+   print("Using short EMA: {}, long EMA: {}".format(short_ema, long_ema))
    print("Watching: ",symbol)
    last_emaShort = None
    last_emaLong = None
-   buy = True
+   buy = False
    sell = False
    i=0
    while True:
@@ -74,7 +75,7 @@ def main_ema():
 
 
         last_emaShort = emaShort 
-        last_emaLong = emaShort
+        last_emaLong = emaLong
         i+=1
         print("-------------------------")
         time.sleep(interval)
@@ -134,7 +135,7 @@ def main_rsi_and_ema():
         priceList = extractPriceList(candleData)
         rsi_line = calculate_rsi(priceList)
         current_rsi = rsi_line[-1] + rsi_tolerance
-        print("current RSI: {}, last RSI: {}".format(current_rsi, last_rsi))
+        print("current RSI: {}, last RSI: {}, closing price: {}".format(current_rsi, last_rsi, priceList[-1]))
         if current_rsi > rsi_oversold and last_rsi and not buy:
             if last_rsi < rsi_oversold:   # detecting crossover of rsi above oversold threshold
                 print("Buy It!")
