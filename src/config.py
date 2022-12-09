@@ -10,8 +10,8 @@ granularity = "1m" # granularity of candles , link: https://bitgetlimited.github
 
 quantity = 0.1 # amount of usd ( base coin) to trade with 
 
-short_ema = 2 # short EMA
-long_ema = 3 # Long EMA || API is returning only 100 records so long_ema is constrained to 100
+short_ema = 9 # short EMA
+long_ema = 21 # Long EMA || API is returning only 100 records so long_ema is constrained to 100
 
 rsi_period = 14  # period used for Relative Strength Index calculation
 rsi_overbought = 75 # overbought threshold for RSI (in percentage | RSI value)
