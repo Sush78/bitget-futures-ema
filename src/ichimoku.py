@@ -2,7 +2,7 @@
 Util functions for ichimoku strategy
 '''
 from datetime import datetime
-from config import symbol
+from config import symbol, demoSymbol
 from utils import makeApiCall
 
 # extract closing price with high and low
@@ -55,6 +55,6 @@ def calculate_and_makeList(data, lrange=9):
 
 def getLatestPrice():
     params = dict()
-    params["symbol"] = symbol
+    params["symbol"] = demoSymbol
     response = makeApiCall("/index", params=params)
     return float(response["data"]["index"])

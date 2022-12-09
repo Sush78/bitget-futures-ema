@@ -1,16 +1,20 @@
 import time 
 from datetime import datetime
 from config import symbol, granularity, short_ema, long_ema, startDate, strategy, strategy_map, interval, rsi_overbought, rsi_oversold \
-    ,rsi_tolerance
-from utils import convertDateToTimestamp, makeApiCall
+    ,rsi_tolerance, demoSymbol, quantity
+from utils import convertDateToTimestamp, makeApiCall, makeVerifiedApiCall
 from ichimoku import calculate_metrics, extractPriceListWithMetrics, getLatestPrice
 from rsi import calculate_rsi
 from ema import calculate_ema, pandas_ema
+import hmac
+import base64
+from dotenv import load_dotenv
+import os
 
 def getCandleData():
     response = []
     params = dict()
-    params["symbol"] = symbol
+    params["symbol"] = demoSymbol
     params["granularity"] = granularity
     params["startTime"] = convertDateToTimestamp(startDate)    # 1659688421000
     params["endTime"] = convertDateToTimestamp(datetime.now()) # 1669763688000
@@ -39,11 +43,11 @@ def extractPriceListOtherApi(data):
 def main_ema():
    print("Using EMA to look for new trades at an interval of {} seconds".format(interval))
    print("Using short EMA: {}, long EMA: {}".format(short_ema, long_ema))
-   print("Watching: ",symbol)
+   print("Watching: ", demoSymbol)
    last_emaShort = None
    last_emaLong = None
    buy = False
-   sell = False
+   sell = True
    i=0
    while True:
         candleData = getCandleData()
@@ -58,19 +62,17 @@ def main_ema():
             print("trying up cross")
             if(last_emaShort < last_emaLong):
                 print("buy it")
+                openLongPosition()
                 buy = True
                 sell = False
-                break
                 
-
         if(emaLong  > emaShort and last_emaShort and not sell):  # looking for crossOver (long crosses short)
             print("trying down cross")
             if(last_emaLong < last_emaShort):
                 print("Sell it")
+                closeLongPosition()
                 sell = True
                 buy = False
-                break
-
 
         last_emaShort = emaShort 
         last_emaLong = emaLong
@@ -80,7 +82,7 @@ def main_ema():
 
 def main_ichimoku():
     print("Using Ichimoku to look for new trades at an interval of {} seconds".format(interval))
-    print("Watching: ", symbol)
+    print("Watching: ", demoSymbol)
     baseLine, conversionLine, laggingLine, line_spanA, line_spanB = [], [], [], [], []
     last_baseLine, last_conversionLine = None, None
     buy = False
@@ -103,9 +105,9 @@ def main_ichimoku():
                 if (currentPrice > line_spanA[-26] 
                         and currentPrice > line_spanB[-26]) and laggingLine[-1] > priceList[-26]['close']:
                     print("Buy it now at {}!".format(currentPrice))
+                    openLongPosition()
                     buy = True
                     sell = False
-                    break
 
         if current_baseLine > current_conversionLine and last_conversionLine and not sell:
             if last_baseLine < last_conversionLine:
@@ -113,9 +115,9 @@ def main_ichimoku():
                 if (currentPrice < line_spanA[-26] 
                         and currentPrice < line_spanB[-26]) and laggingLine[-1] < priceList[-26]['close']:
                     print("Sell it now at {}!".format(currentPrice))
+                    closeLongPosition()
                     buy = False
                     sell = True
-                    break
 
         last_baseLine = current_baseLine
         last_conversionLine = current_conversionLine
@@ -124,7 +126,8 @@ def main_ichimoku():
 
 def main_rsi_and_ema():
     print("Using RSI with EMA to look for new trades at an interval of {} seconds".format(interval))
-    print("Watching: ",symbol)
+    print("over: ", rsi_overbought)
+    print("Watching: ", demoSymbol)
     last_rsi = None
     buy = False
     sell = False
@@ -137,21 +140,42 @@ def main_rsi_and_ema():
         if current_rsi > rsi_oversold and last_rsi and not buy:
             if last_rsi < rsi_oversold:   # detecting crossover of rsi above oversold threshold
                 print("Buy It!")
+                openLongPosition()
                 buy = True
                 sell = False
-                break
+                
         if current_rsi < rsi_overbought and last_rsi and not sell:
             if last_rsi > rsi_overbought:   # detecting crossover of rsi below overbought threshold
                 print("Sell It!")
+                closeLongPosition()
                 buy = False
                 sell = True
-                break
+
         last_rsi = current_rsi
         print("-----------------------")
         time.sleep(interval)
 
+def openLongPosition():
+    print("-----------Opening long position------------")
+    body = '{"symbol":' + '\"' + demoSymbol + '",' + '\"marginCoin":"SUSDT","side":"open_long","orderType":"market","size":' + '\"' + str(quantity) + '\"}'
+    response = makeVerifiedApiCall('POST', '/api/mix/v1/order/placeOrder', None, body)
+    print(response)
+    print("-----------Done-----------")
+    return
+
+
+def closeLongPosition():
+    print("-----------Closing long position------------")
+    body = '{"symbol":' + '\"' + demoSymbol + '",' + '\"marginCoin":"SUSDT","side":"close_long","orderType":"market","size":' + '\"' + str(quantity) + '\"}'
+    #body2 = '{"symbol":"SBTCSUSDT_SUMCBL","marginCoin":"SUSDT","side":"close_long","orderType":"market","size":"0.1"}'
+    response = makeVerifiedApiCall('POST', '/api/mix/v1/order/placeOrder', None, body)
+    print(response)
+    print("-----------Done-----------")
+    return
+
 ## MAIN ##    
 if __name__ == "__main__":
+    load_dotenv()
     if(short_ema >= 100 or long_ema >= 100):
         print("Only 100 recrods are returned by the API, please use short and long ema values below that")
         exit() 
